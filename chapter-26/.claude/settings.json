@@ -1,0 +1,42 @@
+{
+  "mcpServers": {
+    "postgres": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://cinetrack:cinetrack@localhost:5432/cinetrack"
+      ]
+    },
+    "cinetrack-stats": {
+      "command": "node",
+      "args": ["./mcp-servers/cinetrack-stats/dist/index.js"],
+      "env": {
+        "DATABASE_URL": "postgresql://cinetrack:cinetrack@localhost:5432/cinetrack"
+      }
+    }
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'input=$(cat); file=$(echo \"$input\" | jq -r \".tool_input.file_path // empty\"); [[ \"$file\" != *.java ]] && exit 0; cd $(git rev-parse --show-toplevel) && mvn compile -q 2>&1 | tail -15; exit ${PIPESTATUS[0]}'"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd $(git rev-parse --show-toplevel) && echo '--- Test results ---' && mvn test -q 2>&1 | tail -30"
+          }
+        ]
+      }
+    ]
+  }
+}

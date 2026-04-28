@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: cinetrack-postgres
+    environment:
+      POSTGRES_DB: cinetrack
+      POSTGRES_USER: cinetrack
+      POSTGRES_PASSWORD: cinetrack
+    ports:
+      - "5432:5432"
+    volumes:
+      - cinetrack_pg_data:/var/lib/postgresql/data
+
+volumes:
+  cinetrack_pg_data:

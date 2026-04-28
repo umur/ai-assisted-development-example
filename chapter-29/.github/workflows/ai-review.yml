@@ -1,0 +1,75 @@
+name: AI Convention Check
+
+on:
+  pull_request:
+    types: [opened, ready_for_review]
+
+jobs:
+  convention-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Get Java diff
+        id: diff
+        run: |
+          DIFF=$(git diff origin/${{ github.base_ref }}...HEAD -- '*.java')
+          if [ -z "$DIFF" ]; then
+            echo "empty=true" >> $GITHUB_OUTPUT
+          else
+            echo "empty=false" >> $GITHUB_OUTPUT
+            echo "$DIFF" > /tmp/pr.diff
+          fi
+
+      - name: Run convention check
+        if: steps.diff.outputs.empty == 'false'
+        id: review
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          CLAUDE_MD=$(cat CLAUDE.md)
+          DIFF=$(cat /tmp/pr.diff)
+
+          REVIEW=$(claude -p "Audit the diff below against the CinéTrack conventions.
+
+          Conventions (from CLAUDE.md):
+          $CLAUDE_MD
+
+          Rules for this audit:
+          - List violations only. For each: file, line number if visible, convention violated, one-sentence description.
+          - If no violations found, output exactly: NO VIOLATIONS
+          - Do not comment on style, formatting, or code you cannot see in the diff.
+
+          DIFF:
+          $DIFF" \
+            --model claude-sonnet-4-6 \
+            --max-tokens 1024)
+
+          echo "review<<EOF" >> $GITHUB_OUTPUT
+          echo "$REVIEW" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Post PR comment
+        if: steps.diff.outputs.empty == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          REVIEW="${{ steps.review.outputs.review }}"
+          gh pr comment ${{ github.event.number }} --body "**[AI Review]** Convention check — advisory
+
+          $REVIEW
+
+          _Generated automatically. Findings are advisory and may be incorrect._"
+
+      - name: Skip message
+        if: steps.diff.outputs.empty == 'true'
+        run: echo "No Java changes in this PR — skipping AI review."
