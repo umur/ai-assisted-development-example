@@ -8,11 +8,11 @@ JWT for stateless authentication.
 
 ## Tech Stack
 
-- Spring Boot 4.0.x, Java 21 LTS
+- Spring Boot 4.0.5, Java 21 LTS
 - spring-boot-starter-web, data-jpa, security, validation
 - jjwt 0.12.6 — use `verifyWith()` and `parseSignedClaims()`, not the
   old 0.11.x API (`setSigningKey`, `parseClaimsJws`, `getBody`)
-- PostgreSQL 16 via Docker Compose; H2 in test scope for @DataJpaTest
+- PostgreSQL 16 via Docker Compose; Testcontainers 2.x for integration tests (PostgreSQLContainer + @ServiceConnection)
 
 ## Architecture
 
@@ -58,7 +58,7 @@ Service (class), Controller, Request record, Response record, Mapper.
 
 ## Testing
 
-- `@DataJpaTest` for service/repository integration tests with H2
+- `@SpringBootTest(webEnvironment = NONE)` + `@Transactional` + `@Testcontainers` for service/repository integration tests with real PostgreSQL
 - Assert on observable behavior (return values, DB state), not on mock calls
 - Cover all failure paths: not-found, no-op collection operations, boundary cases
 
