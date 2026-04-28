@@ -8,18 +8,18 @@ import com.cinetrack.review.Review;
 import com.cinetrack.review.ReviewRepository;
 import com.cinetrack.user.AppUser;
 import com.cinetrack.user.AppUserRepository;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.annotation.Transactional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.context.annotation.Import;
 
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
-@DataJpaTest
-@Import(UserStatsService.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@Transactional
 class UserStatsServiceTest {
 
     @Autowired UserStatsService service;
